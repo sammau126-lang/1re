@@ -1,0 +1,17 @@
+{
+  "name": "sistema-pendientes-netlify",
+  "version": "1.0.0",
+  "description": "Sistema de Gestión de Pendientes para Netlify",
+  "main": "public/index.html",
+  "scripts": {
+    "dev": "netlify dev",
+    "build": "echo 'No build step required'"
+  },
+  "dependencies": {
+    "@netlify/functions": "^1.0.0",
+    "node-fetch": "^2.6.7"
+  },
+  "devDependencies": {
+    "netlify-cli": "^12.0.0"
+  }
+}

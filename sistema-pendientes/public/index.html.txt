@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestión de Pendientes | Netlify</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- LOADING OVERLAY -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <!-- HEADER -->
+    <header class="main-header">
+        <div class="header-content">
+            <div class="logo-section">
+                <div class="logo-container">
+                    <div class="logo-img">N</div>
+                </div>
+                <div class="title-section">
+                    <h1><i class="fas fa-tasks"></i> Sistema de Gestión de Pendientes</h1>
+                    <p>GESTIÓN • SEGUIMIENTO • PRODUCTIVIDAD</p>
+                </div>
+            </div>
+            <div class="user-info">
+                <div class="status-indicator">
+                    <div class="status-dot"></div>
+                    <span>Sistema Online</span>
+                </div>
+                <div id="currentDateTime" style="font-size: 0.9rem; opacity: 0.9;"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- TABS NAVEGACIÓN -->
+    <div class="tabs-container">
+        <nav class="tabs-nav">
+            <button class="tab-btn active" onclick="openTab('pendientes')">
+                <i class="fas fa-list-check"></i>
+                <span>GESTIÓN DE PENDIENTES</span>
+            </button>
+            <button class="tab-btn" onclick="openTab('dashboard')">
+                <i class="fas fa-chart-line"></i>
+                <span>DASHBOARD DE EFICIENCIA</span>
+            </button>
+            <button class="tab-btn" onclick="openTab('recordatorios')">
+                <i class="fas fa-envelope"></i>
+                <span>GESTOR DE RECORDATORIOS</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="main-content">
+        <!-- ===== PESTAÑA: GESTIÓN DE PENDIENTES ===== -->
+        <div id="tab-pendientes" class="tab-content active">
+            <!-- PANEL DE FILTROS AVANZADOS -->
+            <div class="filters-panel">
+                <div class="filters-header">
+                    <h2><i class="fas fa-filter"></i> FILTROS AVANZADOS</h2>
+                    <div class="filter-actions">
+                        <button class="btn btn-primary" onclick="applyFilters()">
+                            <i class="fas fa-filter"></i> APLICAR FILTROS
+                        </button>
+                        <button class="btn btn-secondary" onclick="resetFilters()">
+                            <i class="fas fa-undo"></i> LIMPIAR FILTROS
+                        </button>
+                        <button class="btn btn-success" onclick="cargarDatos()">
+                            <i class="fas fa-sync-alt"></i> ACTUALIZAR
+                        </button>
+                    </div>
+                </div>
+
+                <div class="filter-grid">
+                    <div class="filter-group">
+                        <label><i class="fas fa-search"></i> BÚSQUEDA AVANZADA</label>
+                        <input type="text" id="searchInput" placeholder="Actividad, descripción, responsable...">
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label><i class="fas fa-users"></i> TIPO DE REUNIÓN</label>
+                        <select id="filterTipoReunion">
+                            <option value="all">TODOS LOS TIPOS</option>
+                            <option value="Logística">LOGÍSTICA</option>
+                            <option value="Almacén">ALMACÉN</option>
+                            <option value="Compras">COMPRAS</option>
+                            <option value="General">GENERAL</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label><i class="fas fa-file-alt"></i> NÚMERO DE ACTA</label>
+                        <select id="filterReunion">
+                            <option value="all">TODAS LAS REUNIONES</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="filter-grid">
+                    <div class="filter-group">
+                        <label><i class="fas fa-user"></i> SOLICITANTE</label>
+                        <select id="filterSolicitante">
+                            <option value="all">TODOS LOS SOLICITANTES</option>
+                            <option value="Logística">LOGÍSTICA</option>
+                            <option value="GAF">GAF</option>
+                            <option value="RRHH">RRHH</option>
+                            <option value="Mantenimiento">MANTENIMIENTO</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label><i class="fas fa-user-tie"></i> RESPONSABLE</label>
+                        <select id="filterResponsable">
+                            <option value="all">TODOS LOS RESPONSABLES</option>
+                            <option value="Ángel Arenas">ÁNGEL ARENAS</option>
+                            <option value="Gerardo Holguin">GERARDO HOLGUIN</option>
+                            <option value="Anthony Zelaya">ANTHONY ZELAYA</option>
+                            <option value="Jeffry Ruiz">JEFFRY RUIZ</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label><i class="fas fa-chart-bar"></i> ESTADO</label>
+                        <select id="filterEstado">
+                            <option value="all">TODOS LOS ESTADOS</option>
+                            <option value="PENDIENTE">PENDIENTE</option>
+                            <option value="EN PROCESO">EN PROCESO</option>
+                            <option value="TERMINADO">TERMINADO</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="filter-actions">
+                    <button class="btn btn-info" onclick="exportarExcel()">
+                        <i class="fas fa-file-excel"></i> EXPORTAR EXCEL
+                    </button>
+                    <button class="btn btn-primary" onclick="mostrarFormularioNuevo()">
+                        <i class="fas fa-plus-circle"></i> NUEVO PENDIENTE
+                    </button>
+                </div>
+            </div>
+
+            <!-- SEMÁFORO DE INDICADORES -->
+            <div class="semaforo-grid">
+                <div class="semaforo-card eficiencia">
+                    <div class="semaforo-header">
+                        <div class="semaforo-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div>
+                            <div class="semaforo-title">EFICIENCIA REAL</div>
+                            <div class="semaforo-subtitle">Lo que YA ESTÁ HECHO</div>
+                        </div>
+                    </div>
+                    <div class="semaforo-value" id="eficienciaReal">0%</div>
+                    <div class="semaforo-description">
+                        (Terminados / Total) × 100<br>
+                        Indicador de productividad real del equipo
+                    </div>
+                </div>
+                
+                <div class="semaforo-card esfuerzo">
+                    <div class="semaforo-header">
+                        <div class="semaforo-icon">
+                            <i class="fas fa-tasks"></i>
+                        </div>
+                        <div>
+                            <div class="semaforo-title">ESFUERZO EN MARCHA</div>
+                            <div class="semaforo-subtitle">Lo que ESTÁS HACIENDO</div>
+                        </div>
+                    </div>
+                    <div class="semaforo-value" id="esfuerzoMarcha">0%</div>
+                    <div class="semaforo-description">
+                        (En Proceso / Total) × 100<br>
+                        Capacidad operativa actual del equipo
+                    </div>
+                </div>
+                
+                <div class="semaforo-card riesgo">
+                    <div class="semaforo-header">
+                        <div class="semaforo-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div>
+                            <div class="semaforo-title">RIESGO DE ATRASO</div>
+                            <div class="semaforo-subtitle">Lo que FALTA POR EMPEZAR</div>
+                        </div>
+                    </div>
+                    <div class="semaforo-value" id="riesgoAtraso">0%</div>
+                    <div class="semaforo-description">
+                        (Pendientes / Total) × 100<br>
+                        Alertas tempranas de posibles retrasos
+                    </div>
+                </div>
+            </div>
+
+            <!-- ESTADÍSTICAS RÁPIDAS -->
+            <div class="stats-grid">
+                <div class="stat-card total" onclick="filtrarPorEstado('all')">
+                    <div class="stat-icon">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <div class="stat-number" id="totalPendientes">0</div>
+                    <div class="stat-label">TOTAL DE TAREAS</div>
+                </div>
+                
+                <div class="stat-card pendientes" onclick="filtrarPorEstado('PENDIENTE')">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-number" id="pendientesCount">0</div>
+                    <div class="stat-label">PENDIENTES</div>
+                </div>
+                
+                <div class="stat-card proceso" onclick="filtrarPorEstado('EN PROCESO')">
+                    <div class="stat-icon">
+                        <i class="fas fa-spinner"></i>
+                    </div>
+                    <div class="stat-number" id="enProcesoCount">0</div>
+                    <div class="stat-label">EN PROCESO</div>
+                </div>
+                
+                <div class="stat-card terminados" onclick="filtrarPorEstado('TERMINADO')">
+                    <div class="stat-icon">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="stat-number" id="terminadosCount">0</div>
+                    <div class="stat-label">TERMINADOS</div>
+                </div>
+            </div>
+
+            <!-- MENSAJES DEL SISTEMA -->
+            <div id="statusMessage"></div>
+
+            <!-- TABLA DE PENDIENTES -->
+            <div class="table-container">
+                <div class="table-header">
+                    <h2><i class="fas fa-table"></i> LISTADO DE PENDIENTES</h2>
+                    <div class="table-actions">
+                        <button class="btn btn-success" onclick="cargarDatos()">
+                            <i class="fas fa-sync-alt"></i> Actualizar
+                        </button>
+                        <button class="btn btn-primary" onclick="mostrarFormularioNuevo()">
+                            <i class="fas fa-plus"></i> Nuevo
+                        </button>
+                    </div>
+                </div>
+                <div class="table-wrapper">
+                    <table class="pendientes-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>ACTA</th>
+                                <th>TIPO REUNIÓN</th>
+                                <th>ACTIVIDAD</th>
+                                <th>SOLICITANTE</th>
+                                <th>RESPONSABLE</th>
+                                <th>ESTADO</th>
+                                <th>FECHA INICIO</th>
+                                <th>FECHA MÁX.</th>
+                                <th>ACCIONES</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaPendientes">
+                            <tr>
+                                <td colspan="10" style="text-align: center; padding: 50px;">
+                                    <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #F7D133;"></i>
+                                    <div style="margin-top: 20px; font-size: 1.2rem;">Cargando datos del sistema...</div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== PESTAÑA: DASHBOARD ===== -->
+        <div id="tab-dashboard" class="tab-content">
+            <div class="filters-panel">
+                <div class="filters-header">
+                    <h2><i class="fas fa-chart-line"></i> DASHBOARD DE EFICIENCIA</h2>
+                    <div class="filter-actions">
+                        <button class="btn btn-primary" onclick="actualizarDashboard()">
+                            <i class="fas fa-sync-alt"></i> ACTUALIZAR
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="filter-grid">
+                    <div class="filter-group">
+                        <label><i class="fas fa-user-tie"></i> FILTRAR POR RESPONSABLE</label>
+                        <select id="dashboardFilterResponsable" onchange="actualizarDashboard()">
+                            <option value="all">TODOS LOS RESPONSABLES</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card total">
+                    <div class="stat-icon">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <div class="stat-number" id="dashboardTotal">0</div>
+                    <div class="stat-label">TOTAL</div>
+                </div>
+                
+                <div class="stat-card pendientes">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-number" id="dashboardPendientes">0</div>
+                    <div class="stat-label">PENDIENTES</div>
+                </div>
+                
+                <div class="stat-card proceso">
+                    <div class="stat-icon">
+                        <i class="fas fa-spinner"></i>
+                    </div>
+                    <div class="stat-number" id="dashboardEnProceso">0</div>
+                    <div class="stat-label">EN PROCESO</div>
+                </div>
+                
+                <div class="stat-card terminados">
+                    <div class="stat-icon">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="stat-number" id="dashboardTerminados">0</div>
+                    <div class="stat-label">TERMINADOS</div>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="dashboard-card">
+                    <div class="chart-title">
+                        <i class="fas fa-chart-pie"></i> DISTRIBUCIÓN POR ESTADO
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="chartEstados"></canvas>
+                    </div>
+                </div>
+                
+                <div class="dashboard-card">
+                    <div class="chart-title">
+                        <i class="fas fa-chart-bar"></i> PENDIENTES POR TIPO DE REUNIÓN
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="chartTipoReunion"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== PESTAÑA: RECORDATORIOS ===== -->
+        <div id="tab-recordatorios" class="tab-content">
+            <div class="filters-panel">
+                <div class="filters-header">
+                    <h2><i class="fas fa-envelope"></i> GESTOR DE RECORDATORIOS</h2>
+                    <div class="filter-actions">
+                        <button class="btn btn-success" onclick="enviarRecordatorios()">
+                            <i class="fas fa-paper-plane"></i> ENVIAR AHORA
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <div class="table-header">
+                    <h2><i class="fas fa-history"></i> HISTORIAL DE RECORDATORIOS</h2>
+                </div>
+                <div class="table-wrapper">
+                    <table class="pendientes-table">
+                        <thead>
+                            <tr>
+                                <th>FECHA/HORA</th>
+                                <th>DESTINATARIOS</th>
+                                <th>PENDIENTES ENVIADOS</th>
+                                <th>ESTADO</th>
+                                <th>MENSAJE</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historialRecordatorios">
+                            <tr>
+                                <td colspan="5" style="text-align: center; padding: 40px;">
+                                    <i class="fas fa-envelope" style="font-size: 3rem; color: #F7D133; opacity: 0.5;"></i>
+                                    <div style="margin-top: 20px; color: #8E8E8D;">No hay historial de recordatorios</div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ===== MODALES ===== -->
+    
+    <!-- MODAL: VER DETALLES -->
+    <div class="modal" id="modalDetalles">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalDetallesTitulo">
+                    <i class="fas fa-info-circle"></i> DETALLES DEL PENDIENTE
+                </h2>
+                <button class="close-modal" onclick="cerrarModal('modalDetalles')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="modalDetallesContenido">
+                    <!-- Contenido dinámico -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="editarPendienteActual()">
+                    <i class="fas fa-edit"></i> EDITAR
+                </button>
+                <button class="btn btn-secondary" onclick="cerrarModal('modalDetalles')">
+                    <i class="fas fa-times"></i> CERRAR
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: EDITAR/CREAR PENDIENTE -->
+    <div class="modal" id="modalEditar">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalEditarTitulo">
+                    <i class="fas fa-plus-circle"></i> NUEVO PENDIENTE
+                </h2>
+                <button class="close-modal" onclick="cerrarModal('modalEditar')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="formEditarPendiente">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label><i class="fas fa-tag"></i> TIPO DE PENDIENTE</label>
+                            <select id="editTipoPendiente" required>
+                                <option value="">SELECCIONAR...</option>
+                                <option value="Proyectos de Desarrollo">PROYECTOS DE DESARROLLO</option>
+                                <option value="Eficiencia Operativa y de Tiempo">EFICIENCIA OPERATIVA Y DE TIEMPO</option>
+                                <option value="Cumplimiento de Entregables y Proyectos">CUMPLIMIENTO DE ENTREGABLES Y PROYECTOS</option>
+                                <option value="Ahorro y Optimización de Recursos">AHORRO Y OPTIMIZACIÓN DE RECURSOS</option>
+                                <option value="Mejora de Gestión y Comunicación">MEJORA DE GESTIÓN Y COMUNICACIÓN</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label><i class="fas fa-users"></i> TIPO DE REUNIÓN</label>
+                            <select id="editTipoReunion" required>
+                                <option value="">SELECCIONAR...</option>
+                                <option value="Logística">LOGÍSTICA</option>
+                                <option value="Almacén">ALMACÉN</option>
+                                <option value="Compras">COMPRAS</option>
+                                <option value="General">GENERAL</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label><i class="fas fa-tasks"></i> ACTIVIDAD *</label>
+                        <input type="text" id="editActividad" required placeholder="Describe la actividad a realizar...">
+                    </div>
+
+                    <div class="form-group">
+                        <label><i class="fas fa-align-left"></i> DESCRIPCIÓN</label>
+                        <textarea id="editDescripcion" placeholder="Detalles adicionales de la actividad..."></textarea>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label><i class="fas fa-user"></i> SOLICITANTE *</label>
+                            <select id="editSolicitante" required>
+                                <option value="">SELECCIONAR...</option>
+                                <option value="Logística">LOGÍSTICA</option>
+                                <option value="GAF">GAF</option>
+                                <option value="RRHH">RRHH</option>
+                                <option value="Mantenimiento">MANTENIMIENTO</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label><i class="fas fa-user-tie"></i> RESPONSABLE *</label>
+                            <select id="editResponsable" required>
+                                <option value="">SELECCIONAR...</option>
+                                <option value="Ángel Arenas">ÁNGEL ARENAS</option>
+                                <option value="Gerardo Holguin">GERARDO HOLGUIN</option>
+                                <option value="Anthony Zelaya">ANTHONY ZELAYA</option>
+                                <option value="Jeffry Ruiz">JEFFRY RUIZ</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label><i class="fas fa-calendar-plus"></i> FECHA INICIO</label>
+                            <input type="date" id="editFechaInicio">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label><i class="fas fa-calendar-check"></i> FECHA MÁXIMA</label>
+                            <input type="date" id="editFechaMaxPlazo">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label><i class="fas fa-flag-checkered"></i> FECHA CULMINACIÓN</label>
+                            <input type="date" id="editFechaCulminacion">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label><i class="fas fa-sticky-note"></i> OBSERVACIONES</label>
+                        <textarea id="editObservacion" placeholder="Observaciones importantes..."></textarea>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label><i class="fas fa-comment"></i> COMENTARIO RESPONSABLE</label>
+                            <textarea id="editComentarioResponsable" placeholder="Comentario del responsable..."></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label><i class="fas fa-chart-bar"></i> ESTADO *</label>
+                            <select id="editEstado" required>
+                                <option value="PENDIENTE">PENDIENTE</option>
+                                <option value="EN PROCESO">EN PROCESO</option>
+                                <option value="TERMINADO">TERMINADO</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-success" onclick="guardarPendiente()">
+                    <i class="fas fa-save"></i> GUARDAR
+                </button>
+                <button class="btn btn-secondary" onclick="cerrarModal('modalEditar')">
+                    <i class="fas fa-times"></i> CANCELAR
+                </button>
+                <button class="btn btn-danger" id="btnEliminarPendiente" onclick="eliminarPendiente()" style="display: none;">
+                    <i class="fas fa-trash"></i> ELIMINAR
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTÓN FLOTANTE -->
+    <button class="btn btn-primary" onclick="mostrarFormularioNuevo()" 
+            style="position: fixed; bottom: 30px; right: 30px; width: 70px; height: 70px; border-radius: 50%; font-size: 1.5rem; z-index: 1000; box-shadow: 0 10px 30px rgba(247, 209, 51, 0.3);">
+        <i class="fas fa-plus"></i>
+    </button>
+
+    <script src="script.js"></script>
+</body>
+</html>

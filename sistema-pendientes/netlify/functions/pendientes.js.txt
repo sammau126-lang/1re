@@ -1,0 +1,379 @@
+// Backend para el sistema de pendientes - Simulación de base de datos en memoria
+let pendientesDB = [];
+let reunionesDB = [];
+let recordatoriosDB = [];
+
+// Función para inicializar datos de ejemplo
+function inicializarDatosEjemplo() {
+  if (pendientesDB.length === 0) {
+    pendientesDB = [
+      {
+        id: 'LOG001-1',
+        numero: '1',
+        tipoReunion: 'Logística',
+        numeroActa: 'LOG001',
+        fechaReunion: '04/08/2025',
+        tipoPendiente: 'Eficiencia Operativa y de Tiempo',
+        actividad: 'Programar recepción de despachos semanales',
+        descripcion: 'Incluir suministros y materiales críticos',
+        solicitante: 'Logística',
+        responsable: 'Ángel Arenas',
+        observacion: 'Revisar horarios de 9-12 y 2-4:45',
+        fechaInicio: '2024-01-10',
+        fechaMaxPlazo: '2024-01-25',
+        fechaCulminacion: '',
+        comentarioResponsable: 'En coordinación con almacén',
+        estado: 'EN PROCESO',
+        fechaCreacion: new Date().toISOString()
+      },
+      {
+        id: 'ALM001-1',
+        numero: '1',
+        tipoReunion: 'Almacén',
+        numeroActa: 'ALM001',
+        fechaReunion: '05/08/2025',
+        tipoPendiente: 'Cumplimiento de Entregables',
+        actividad: 'Reorganización de almacén principal',
+        descripcion: 'Optimizar distribución de estanterías',
+        solicitante: 'GAF',
+        responsable: 'Anthony Zelaya',
+        observacion: 'Priorizar zona de materiales peligrosos',
+        fechaInicio: '2024-01-05',
+        fechaMaxPlazo: '2024-02-15',
+        fechaCulminacion: '',
+        comentarioResponsable: 'Esperando aprobación de presupuesto',
+        estado: 'PENDIENTE',
+        fechaCreacion: new Date().toISOString()
+      }
+    ];
+  }
+  
+  if (reunionesDB.length === 0) {
+    reunionesDB = [
+      {
+        numeroActa: 'LOG001',
+        tipoReunion: 'Logística',
+        fechaReunion: '04/08/2025'
+      },
+      {
+        numeroActa: 'ALM001',
+        tipoReunion: 'Almacén',
+        fechaReunion: '05/08/2025'
+      }
+    ];
+  }
+}
+
+exports.handler = async function(event, context) {
+  // Configurar CORS
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Content-Type': 'application/json'
+  };
+
+  // Manejar solicitudes OPTIONS para CORS
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers,
+      body: ''
+    };
+  }
+
+  // Inicializar datos si es necesario
+  inicializarDatosEjemplo();
+
+  const { path } = event;
+  const method = event.httpMethod;
+
+  try {
+    // Obtener todos los pendientes
+    if (path === '/api/pendientes' && method === 'GET') {
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          success: true,
+          data: pendientesDB,
+          count: pendientesDB.length
+        })
+      };
+    }
+
+    // Obtener reuniones disponibles
+    if (path === '/api/reuniones' && method === 'GET') {
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          success: true,
+          data: reunionesDB
+        })
+      };
+    }
+
+    // Obtener un pendiente específico
+    if (path.startsWith('/api/pendientes/') && method === 'GET') {
+      const id = path.split('/').pop();
+      const pendiente = pendientesDB.find(p => p.id === id);
+      
+      if (!pendiente) {
+        return {
+          statusCode: 404,
+          headers,
+          body: JSON.stringify({
+            success: false,
+            error: 'Pendiente no encontrado'
+          })
+        };
+      }
+
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          success: true,
+          data: pendiente
+        })
+      };
+    }
+
+    // Crear nuevo pendiente
+    if (path === '/api/pendientes' && method === 'POST') {
+      const data = JSON.parse(event.body);
+      
+      if (!data.actividad || !data.responsable || !data.estado) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({
+            success: false,
+            error: 'Faltan campos obligatorios'
+          })
+        };
+      }
+
+      const nuevoId = `${data.numeroActa || 'GEN'}-${Date.now()}`;
+      const nuevoNumero = (pendientesDB.length + 1).toString();
+      
+      const nuevoPendiente = {
+        id: nuevoId,
+        numero: nuevoNumero,
+        tipoReunion: data.tipoReunion || 'General',
+        numeroActa: data.numeroActa || 'NUEVO',
+        fechaReunion: data.fechaReunion || new Date().toLocaleDateString('es-ES'),
+        tipoPendiente: data.tipoPendiente || '',
+        actividad: data.actividad,
+        descripcion: data.descripcion || '',
+        solicitante: data.solicitante || '',
+        responsable: data.responsable,
+        observacion: data.observacion || '',
+        fechaInicio: data.fechaInicio || '',
+        fechaMaxPlazo: data.fechaMaxPlazo || '',
+        fechaCulminacion: data.fechaCulminacion || '',
+        comentarioResponsable: data.comentarioResponsable || '',
+        estado: data.estado,
+        fechaCreacion: new Date().toISOString()
+      };
+
+      pendientesDB.push(nuevoPendiente);
+
+      return {
+        statusCode: 201,
+        headers,
+        body: JSON.stringify({
+          success: true,
+          message: 'Pendiente creado correctamente',
+          data: nuevoPendiente
+        })
+      };
+    }
+
+    // Actualizar pendiente
+    if (path.startsWith('/api/pendientes/') && method === 'PUT') {
+      const id = path.split('/').pop();
+      const data = JSON.parse(event.body);
+      
+      const index = pendientesDB.findIndex(p => p.id === id);
+      
+      if (index === -1) {
+        return {
+          statusCode: 404,
+          headers,
+          body: JSON.stringify({
+            success: false,
+            error: 'Pendiente no encontrado'
+          })
+        };
+      }
+
+      pendientesDB[index] = {
+        ...pendientesDB[index],
+        ...data,
+        id: pendientesDB[index].id // Mantener el ID original
+      };
+
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          success: true,
+          message: 'Pendiente actualizado correctamente',
+          data: pendientesDB[index]
+        })
+      };
+    }
+
+    // Eliminar pendiente
+    if (path.startsWith('/api/pendientes/') && method === 'DELETE') {
+      const id = path.split('/').pop();
+      const index = pendientesDB.findIndex(p => p.id === id);
+      
+      if (index === -1) {
+        return {
+          statusCode: 404,
+          headers,
+          body: JSON.stringify({
+            success: false,
+            error: 'Pendiente no encontrado'
+          })
+        };
+      }
+
+      pendientesDB.splice(index, 1);
+
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          success: true,
+          message: 'Pendiente eliminado correctamente'
+        })
+      };
+    }
+
+    // Exportar pendientes
+    if (path === '/api/exportar' && method === 'POST') {
+      const filtros = JSON.parse(event.body);
+      let datosFiltrados = [...pendientesDB];
+
+      // Aplicar filtros si existen
+      if (filtros) {
+        if (filtros.tipoReunion && filtros.tipoReunion !== 'all') {
+          datosFiltrados = datosFiltrados.filter(p => p.tipoReunion === filtros.tipoReunion);
+        }
+        if (filtros.estado && filtros.estado !== 'all') {
+          datosFiltrados = datosFiltrados.filter(p => p.estado === filtros.estado);
+        }
+        if (filtros.responsable && filtros.responsable !== 'all') {
+          datosFiltrados = datosFiltrados.filter(p => p.responsable === filtros.responsable);
+        }
+      }
+
+      // Generar CSV
+      const encabezados = [
+        '#', 'Tipo Reunión', 'Número Acta', 'Fecha Reunión',
+        'Tipo Pendiente', 'Actividad', 'Descripción', 'Solicitante',
+        'Responsable', 'Observación', 'Fecha Inicio', 'Fecha Máx Plazo',
+        'Fecha Culminación', 'Comentario Responsable', 'Estado'
+      ];
+
+      let csv = encabezados.join(',') + '\n';
+      
+      datosFiltrados.forEach(pendiente => {
+        const fila = [
+          pendiente.numero,
+          `"${pendiente.tipoReunion}"`,
+          pendiente.numeroActa,
+          `"${pendiente.fechaReunion}"`,
+          `"${pendiente.tipoPendiente}"`,
+          `"${pendiente.actividad}"`,
+          `"${pendiente.descripcion}"`,
+          `"${pendiente.solicitante}"`,
+          `"${pendiente.responsable}"`,
+          `"${pendiente.observacion}"`,
+          `"${pendiente.fechaInicio}"`,
+          `"${pendiente.fechaMaxPlazo}"`,
+          `"${pendiente.fechaCulminacion}"`,
+          `"${pendiente.comentarioResponsable}"`,
+          `"${pendiente.estado}"`
+        ];
+        csv += fila.join(',') + '\n';
+      });
+
+      return {
+        statusCode: 200,
+        headers: {
+          ...headers,
+          'Content-Type': 'text/csv',
+          'Content-Disposition': `attachment; filename="pendientes_export_${Date.now()}.csv"`
+        },
+        body: csv
+      };
+    }
+
+    // Enviar recordatorios
+    if (path === '/api/recordatorios/enviar' && method === 'POST') {
+      const data = JSON.parse(event.body);
+      
+      // Simular envío de recordatorios
+      const recordatorio = {
+        id: Date.now().toString(),
+        fecha: new Date().toISOString(),
+        destinatarios: data.destinatarios || 'Todos los responsables',
+        cantidadPendientes: pendientesDB.filter(p => p.estado !== 'TERMINADO').length,
+        estado: 'enviado',
+        mensaje: 'Recordatorios enviados exitosamente'
+      };
+
+      recordatoriosDB.push(recordatorio);
+
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          success: true,
+          message: 'Recordatorios enviados correctamente',
+          data: recordatorio
+        })
+      };
+    }
+
+    // Obtener historial de recordatorios
+    if (path === '/api/recordatorios' && method === 'GET') {
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          success: true,
+          data: recordatoriosDB
+        })
+      };
+    }
+
+    // Ruta no encontrada
+    return {
+      statusCode: 404,
+      headers,
+      body: JSON.stringify({
+        success: false,
+        error: 'Ruta no encontrada'
+      })
+    };
+
+  } catch (error) {
+    console.error('Error en el backend:', error);
+    
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({
+        success: false,
+        error: 'Error interno del servidor',
+        message: error.message
+      })
+    };
+  }
+};
